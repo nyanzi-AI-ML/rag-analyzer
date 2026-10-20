@@ -8,20 +8,32 @@ An advanced Retrieval-Augmented Generation (RAG) system built to automate the ex
 
 * **Company Background:** Finsights Grey Inc. is a financial technology firm specializing in advanced analytics and insights for investment management and financial planning.
 * **The Challenge:** Analysts manage extensive collections of 10-K reports detailing financial performance, risk factors, market trends, and strategic initiatives. Extracting precise information manually is time-consuming and creates a bottleneck for delivering timely client recommendations.
-* **The Solution:** Implementation of an automated RAG-based system to drastically enhance the speed and accuracy of investment insights across five major platforms: **Amazon AWS, Google Cloud, Microsoft Azure, Meta AI, and IBM Watson**[cite: 1, 12].
+* **The Solution:** Implementation of an automated RAG-based system to drastically enhance the speed and accuracy of investment insights across five major platforms: **Amazon AWS, Google Cloud, Microsoft Azure, Meta AI, and IBM Watson**.
 
 ---
 
 ## 🚀 Project Objectives
 
-* **Automated Information Extraction:** Streamline the analysis of key 10-K report metrics[cite: 1].
-* **Comparative Platform Research:** Evaluate major tech giants on AI acquisitions, R&D capital allocation, ethical AI initiatives, and competitive differentiation[cite: 1].
-* **Productivity Enhancement:** Empower financial analysts with a rapid query tool for timely client recommendations[cite: 1].
-* **Cloud Deployment:** Deploy an interactive web application on Hugging Face Spaces with automated evaluation and request logging[cite: 1, 14, 16].
+* **Automated Information Extraction:** Streamline the analysis of key 10-K report metrics.
+* **Comparative Platform Research:** Evaluate major tech giants on AI acquisitions, R&D capital allocation, ethical AI initiatives, and competitive differentiation.
+* **Systematic LLM Evaluation:** Utilize an LLM-as-a-Judge framework to rigorously measure response faithfulness and answer relevance against source chunks.
+* **Productivity Enhancement:** Empower financial analysts with a rapid query tool for timely client recommendations.
+* **Cloud Deployment:** Deploy an interactive web application on Hugging Face Spaces with automated evaluation and request logging.
 
 ---
 
-## 📊 Architecture Overview
+## 🛠️ Tech Stack Dependencies 
+* **Language:** Python 
+* **Frameworks:** LangChain, LangChain Community
+* **Vector Database:** ChromaDB
+* **Embeddings Model:** Hugging Face Sentence Transformers (thenlper/gte-large)   
+* **Large Language Model:** OpenAI GPT-4 (used for response generation and LLM-as-a-judge evaluation)   
+* **PDF Processing:** PyPDF / PyPDFDirectoryLoader   
+* **Interface & Logging:** Gradio, Hugging Face Hub (CommitScheduler)   
+
+---
+
+## 🏛️ Architecture Overview
 
 ```mermaid
 graph TD
@@ -40,19 +52,11 @@ graph TD
         H -->|Grounded Financial Insight| F
     end
     subgraph Monitoring
+        H -->|Context + Response| J["LLM-as-a-Judge (Faithfulness & Relevance)"]
         H -->|CommitScheduler| I["Hugging Face Dataset Logs"]
     end
 ```
 ---
-## 🛠️ Tech Stack Dependencies 
-* **Language:** Python 
-* **Frameworks:** LangChain, LangChain Community
-* **Vector Database:** ChromaDB
-* **Embeddings Model:** Hugging Face Sentence Transformers (thenlper/gte-large)   
-* **Large Language Model:** OpenAI GPT-4 (used for response generation and LLM-as-a-judge evaluation)   
-* **PDF Processing:** PyPDF / PyPDFDirectoryLoader   
-* **Interface & Logging:** Gradio, Hugging Face Hub (CommitScheduler)   
-
 ## ⚙️ Installation & Local Setup
 
 To run this project locally or within a notebook environment, install the required packages:
@@ -60,6 +64,7 @@ To run this project locally or within a notebook environment, install the requir
 ```bash
 pip install openai==1.23.2 tiktoken==0.6.0 pypdf==4.0.1 langchain==0.1.1 langchain-community==0.0.13 chromadb==0.4.22 sentence-transformers==2.3.1
 ```
+---
 
 ## 🎬 Project Pipeline & Workflow
 
