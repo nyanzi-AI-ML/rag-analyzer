@@ -24,7 +24,7 @@ An advanced Retrieval-Augmented Generation (RAG) system built to automate the ex
 ## 📊 Architecture Overview
 
 ```mermaid
-graph LR
+graph TD
     subgraph Data Processing
         A["10-K PDF Reports (AWS, Google, MSFT, Meta, IBM)"] -->|PyPDFDirectoryLoader| B["Text Splitting"]
         B --> C["Document Chunks (Chunk Size: 512, Overlap: 16)"]
