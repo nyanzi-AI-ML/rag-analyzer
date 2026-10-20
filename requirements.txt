@@ -1,0 +1,7 @@
+openai>=1.30.0
+chromadb>=0.4.24
+langchain>=0.1.20
+langchain-community>=0.0.38
+sentence-transformers>=2.5.0
+audioop-lts
+huggingface-hub<0.26.0
