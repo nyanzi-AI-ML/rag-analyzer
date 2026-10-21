@@ -6,7 +6,7 @@ An advanced Retrieval-Augmented Generation (RAG) system built to automate the ex
 
 ## 🏢 Business Use Case & Problem Statement
 
-* **Company Background:** Finsights Grey Inc. is a financial technology firm specializing in advanced analytics and insights for investment management and financial planning.
+* **Company Background:** A financial technology firm specializing in advanced analytics and insights for investment management and financial planning.
 * **The Challenge:** Analysts manage extensive collections of 10-K reports detailing financial performance, risk factors, market trends, and strategic initiatives. Extracting precise information manually is time-consuming and creates a bottleneck for delivering timely client recommendations.
 * **The Solution:** Implementation of an automated RAG-based system to drastically enhance the speed and accuracy of investment insights across five major platforms: **Amazon AWS, Google Cloud, Microsoft Azure, Meta AI, and IBM Watson**.
 
@@ -33,39 +33,65 @@ An advanced Retrieval-Augmented Generation (RAG) system built to automate the ex
 
 ---
 
-## 🏛️ Architecture Overview
+## 🏛️ System Runtime Architecture (app.py)
+This diagram represents the runtime execution flow encapsulated within app.py
 
 ```mermaid
 graph TD
-    subgraph Data Processing
-        A["10-K PDF Reports (AWS, Google, MSFT, Meta, IBM)"] -->|PyPDFDirectoryLoader| B["Text Splitting"]
-        B --> C["Document Chunks (Chunk Size: 512, Overlap: 16)"]
+    subgraph App["app.py (Hugging Face Spaces Runtime)"]
+        UI["Gradio User Interface"]
+        VS[("ChromaDB Vector Store")]
+        LLM["OpenAI GPT-4"]
+        LOGGER["CommitScheduler Log Manager"]
+
+        UI -->|"1. User Query & Filters"| VS
+        VS -->|"2. Retrieved Context Chunks (k=5)"| LLM
+        LLM -->|"3. Grounded Answer"| UI
+        UI -->|"4. Async Request Logging"| LOGGER
     end
-    subgraph Vector Store
-        C -->|Sentence Transformers| D["Embeddings Generation"]
-        D --> E["ChromaDB Vector Store"]
-    end
-    subgraph RAG Pipeline
-        F["Financial Analyst (Gradio UI)"] -->|User Query & Company Selection| G["Similarity Search (Filtered k=5)"]
-        E -->|Retrieved Context Chunks| G
-        G -->|Context + Prompt Template| H["OpenAI GPT-4 (LLM Generation)"]
-        H -->|Grounded Financial Insight| F
-    end
-    subgraph Monitoring
-        H -->|Context + Response| J["LLM-as-a-Judge (Faithfulness & Relevance)"]
-        H -->|CommitScheduler| I["Hugging Face Dataset Logs"]
-    end
+
+    LOGGER -->|"Persists qna_logs.json"| HF[("Hugging Face Datasets")]
+
 ```
 ---
-## ⚙️ Installation & Local Setup
+## ⚙️ Project Pipeline & Deployment Workflow
+This diagram represents the notebook build environment where data ingestion, vector creation, RAG building and LLM-as-a-Judge evaluation happen prior to deployment.
+```mermaid
+graph LR
+    A["Import Libraries"] --> B["Chunk Data"]
+    B --> C["Create VectorDb"]
+    C --> D["Build RAG"]
+    D --> E{"Evaluate"}
+    E --> F["App.py"]
+    G["Gradio"] --> F
+
+    A --> H["Requirements"]
+    C --> I["Persisted VectorDB"]
+    
+    H --> J["HuggingFace Spaces"]
+    I --> J
+    F --> J
+```
+---
+## 🧠 The cental role of `app.py`
+In the rag-analyzer architecture, `app.py` is the production backbone of the project. While the Jupyter notebook (financial_rag_analysis.ipynb) handles heavy-lifting data ingestion and evaluation offline, `app.py` assumes total runtime responsibility once deployed to Hugging Face Spaces:
+
+1. **Interactive Runtime Orchestration:** Initializes and hosts the Gradio web interface, capturing user queries and financial metadata filters in real-time.
+2. **Semantic Retrieval & Generation Loop:** Connects directly to the persisted ChromaDB vector store to execute similarity searches ($k=5$) and feeds the retrieved context chunks into the OpenAI GPT-4 pipeline for grounded, context-aware financial answers.
+3. **Production Observability & Logging:** Integrates the `CommitScheduler` utility to asynchronously capture and commit every interaction (user queries, model responses, and session metadata) into an audit trail (qna_logs.json) stored on Hugging Face Datasets.
+4. **Self-Contained Deployment Artifact:** Serves as the immutable entrypoint that Hugging Face Spaces automatically detects, executes, and builds using the companion requirements.txt environment.
+
+---
+
+## 🎬 Installation & Local Setup
 
 To run this project locally or within a notebook environment, install the required packages:
 
 ```bash
 pip install openai==1.23.2 tiktoken==0.6.0 pypdf==4.0.1 langchain==0.1.1 langchain-community==0.0.13 chromadb==0.4.22 sentence-transformers==2.3.1
 ```
----
 
+---
 ## 🎬 Project Pipeline & Workflow
 
 1. **Data Preparation & Chunking:**
@@ -88,6 +114,67 @@ pip install openai==1.23.2 tiktoken==0.6.0 pypdf==4.0.1 langchain==0.1.1 langcha
 
 ---
 
+## ☁️ Hugging Face Spaces Deployment
+The `rag-analyzer` application is designed to run seamlessly on **Hugging Face Spaces** using the **Gradio** SDK.
+
+### Prerequisites
+* A [Hugging Face account](https://huggingface.co/join).
+* An OpenAI API Key (`OPENAI_API_KEY`).
+* A Hugging Face write token (`HF_TOKEN`) for log persistence via `CommitScheduler`.
+
+---
+
+### Step-by-Step Deployment Instructions
+
+#### 1. Create a New Space
+1. Navigate to [Hugging Face Spaces](https://huggingface.co/spaces) and click **Create new Space**.
+2. Set the **Space name** (e.g., `rag-analyzer`).
+3. Select **Gradio** as the Space SDK.
+4. Set the repository visibility (Public or Private).
+
+#### 2. Push Repository Artifacts to the Space
+You can push the required deployment files (`app.py`, `requirements.txt`, and the `chroma_db/` persistent directory generated by your notebook) to the Space repository using Git:
+
+```bash
+# Add Hugging Face Space as a remote target
+git remote add hf [https://huggingface.co/spaces/](https://huggingface.co/spaces/)<your-username>/rag-analyzer
+
+# Push deployment artifacts to the Space
+git push hf main
+```
+### CI/CD Deloyment Workflow
+This diagram illustrates an automated CI/CD pipeline for Hugging Face Spaces.
+```mermaid
+graph LR
+    subgraph Repo ["repository"]
+        direction TB
+        VDB["VectorDB"]
+        APP["app.py"]
+        REQ["requirements.txt"]
+        LLM["LLM on Anyscale"]
+
+        VDB --> APP
+        APP --> REQ
+        REQ --> LLM
+        LLM --> APP
+    end
+
+    Repo --> Build["Build<br/>• Docker image created and pushed<br/>• Install requirements"]
+    
+    subgraph UI ["Gradio UI"]
+        Interface["Gradio Web Interface"]
+    end
+
+    Build --> Interface
+    Interface --> Logs["Logs"]
+    Interface --> API["API"]
+
+    subgraph CICD_Note ["CICD"]
+        Note["Whenever changes have been made,<br/>a new build happens automatically"]
+    end
+```
+
+---
 ## 🌐 Live Application & Datasets
 
 * **Hugging Face Space App:** [Nyanzi Reports QnA Space](https://huggingface.co/spaces/jnyanzi/nyanzi_reports_qna)
